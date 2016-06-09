@@ -6,7 +6,9 @@ import com.zjlp.face.spark.base.{Props, ISparkBaseFactory, JdbcDF, SQLContextSin
 import com.zjlp.face.spark.util.DateUtils
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.Logging
+import org.springframework.stereotype.Component
 
+@Component
 class SparkBaseFactoryImpl extends ISparkBaseFactory with Logging {
   /**
    * 获取sqlContext
