@@ -3,7 +3,7 @@ package com.zjlp.face.spark.test
 import java.util
 
 import com.zjlp.face.spark.base.factory.SparkBaseFactoryImpl
-import com.zjlp.face.spark.impl.BusinessCircleImpl
+import com.zjlp.face.spark.service.impl.BusinessCircleImpl
 
 object Test {
   val bc = new BusinessCircleImpl()
@@ -41,6 +41,7 @@ object Test {
     //testSearchPersonRelation
     bc.setSparkBaseFactory(new SparkBaseFactoryImpl)
     bc.updateDBSources
+
     testSearchCommonFriendNum
     println("################### 计时结束。耗时：" + ((System.currentTimeMillis() - beginTime)/1000 + "秒"))
   }

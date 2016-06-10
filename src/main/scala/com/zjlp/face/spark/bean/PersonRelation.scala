@@ -6,7 +6,7 @@ import scala.beans.BeanProperty
  * @param userId 用户（商户）id
  * @param `type` 关系类型 1：一度好友 2：二度好友  3：陌生人
  */
-class PersonRelation(@BeanProperty var userId: String, @BeanProperty var `type`: Int) {
+class PersonRelation(@BeanProperty var userId: String, @BeanProperty var `type`: Int) extends scala.Serializable {
   def this() {
     this("",0)
   }

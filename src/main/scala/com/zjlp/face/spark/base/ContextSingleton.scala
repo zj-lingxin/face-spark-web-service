@@ -1,5 +1,6 @@
 package com.zjlp.face.spark.base
 
+import com.zjlp.face.spark.base.factory.SparkBaseFactoryImpl
 import com.zjlp.face.spark.bean.{PersonRelation, CommonFriendNum}
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.{Logging, SparkConf, SparkContext}
@@ -26,6 +27,7 @@ object SparkContextSingleton extends Logging {
 
   private def getSparkConf = {
     val conf = new SparkConf()
+
     Array(
       "spark.master",
       "spark.app.name",
@@ -37,7 +39,8 @@ object SparkContextSingleton extends Logging {
       "spark.driver.memory",
       "spark.driver.cores",
       "spark.default.parallelism",
-      "spark.home"
+      "spark.home",
+      "spark.jars"
     ).foreach { prop =>
       conf.set(prop, Props.get(prop))
     }
@@ -45,7 +48,8 @@ object SparkContextSingleton extends Logging {
     conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
     conf.registerKryoClasses(Array(
       classOf[CommonFriendNum],
-      classOf[PersonRelation]
+      classOf[PersonRelation],
+      classOf[SparkBaseFactoryImpl]
     ))
 
     conf
