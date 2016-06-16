@@ -9,7 +9,7 @@
   <url>http://maven.apache.org</url>
 
   <properties>
-    <jdk.version>1.7</jdk.version>
+    <jdk.version>1.6</jdk.version>
     <scala.major.version>2.10</scala.major.version>
     <scala.minor.version>2.10.4</scala.minor.version>
     <spark.version>1.6.1</spark.version>

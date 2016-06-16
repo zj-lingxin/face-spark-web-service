@@ -2,6 +2,7 @@ package com.zjlp.face.spark.test
 
 import java.util
 
+import com.zjlp.face.spark.base.{Props, SQLContextSingleton}
 import com.zjlp.face.spark.base.factory.SparkBaseFactoryImpl
 import com.zjlp.face.spark.service.impl.BusinessCircleImpl
 
@@ -18,8 +19,8 @@ object Test {
     userNames.add("13000000006")
     userNames.add("1300000xx06")
     val loginAccount = "13000000002"
-    val result = bc.searchCommonFriendNum(userNames, loginAccount)
-    println(result)
+    val list = bc.searchCommonFriendNum(userNames, loginAccount)
+    println(list)
   }
 
   def testSearchPersonRelation() = {
@@ -30,19 +31,21 @@ object Test {
     userIds.add("3183")
     userIds.add("2807")
     userIds.add("1080")
-    val  list =  bc.searchPersonRelation(userIds, "13000000005")
+    val list = bc.searchPersonRelation(userIds, "13000000005")
     println(list)
   }
 
 
   def main(args: Array[String]) {
-    val beginTime = System.currentTimeMillis()
-    println("###################开始计时###################")
-    //testSearchPersonRelation
     bc.setSparkBaseFactory(new SparkBaseFactoryImpl)
     bc.updateDBSources
+    val beginTime = System.currentTimeMillis()
+    println("################## 业务代码 开始计时###################")
+    testSearchPersonRelation
+    // testSearchCommonFriendNum
+    println("################### 业务代码 总耗时：" + ((System.currentTimeMillis() - beginTime) / 1000D + "秒"))
+    while (true) {
 
-    testSearchCommonFriendNum
-    println("################### 计时结束。耗时：" + ((System.currentTimeMillis() - beginTime)/1000 + "秒"))
+    }
   }
 }
