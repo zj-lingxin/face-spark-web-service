@@ -1,6 +1,6 @@
 package com.zjlp.face.spark.service.impl
 
-import com.zjlp.face.spark.base.{Props, ISparkBaseFactory}
+import com.zjlp.face.spark.base.{SQLContextSingleton, Props, ISparkBaseFactory}
 import com.zjlp.face.spark.bean.{PersonRelation, CommonFriendNum}
 import com.zjlp.face.spark.service.IBusinessCircle
 import org.apache.spark.Logging
@@ -13,7 +13,6 @@ import javax.annotation.Resource
 import collection.JavaConversions._
 import scala.beans.BeanProperty
 import scala.collection.mutable.ArrayBuffer
-import com.zjlp.face.spark.util.Utils
 
 @Service(value = "businessCircle")
 class BusinessCircleImpl extends IBusinessCircle with Logging {
@@ -46,8 +45,8 @@ class BusinessCircleImpl extends IBusinessCircle with Logging {
    * 更新数据源 定时任务调取
    * @return 返回执行状态
    */
-  def updateDBSources: java.lang.Boolean = {
-    sparkBaseFactory.updateSQLContext
+  def updateDBSources(): java.lang.Boolean = {
+    sparkBaseFactory.updateSQLContext()
     true
   }
 
@@ -68,17 +67,43 @@ class BusinessCircleImpl extends IBusinessCircle with Logging {
       .map(a => (a(0).toString, a(1).toString))
 
     //得到loginAccount的朋友
-    val myFriends = sqlContext.sql(s"select loginAccount from ofRoster where username = '${loginAccount}'").map(_ (0).toString).collect()
+    val myFriends = sqlContext.sql(s"select loginAccount from ofRoster where username = '$loginAccount'").map(_ (0).toString).collect()
 
     //该步骤会计算出共同好友的人数，但是如果共同好友人数为0，则username会被过滤掉
     val comFriendsMap = othersFriends.aggregateByKey(new ArrayBuffer[String](), Props.get("spark.default.parallelism").toString.toInt)((acc: ArrayBuffer[String], value: String) => acc += value, (acc1, acc2) => acc1 ++ acc2)
-      .mapValues(a => a.distinct.intersect(myFriends).size)
-      .collectAsMap()
+      .mapValues(a => a.distinct.intersect(myFriends).size).collectAsMap()
 
     val resultList = new util.ArrayList[CommonFriendNum]()
     userNames.foreach { username =>
-      val num =  if(comFriendsMap.contains(username)) comFriendsMap(username) else 0
-      resultList.add(new CommonFriendNum(username,num))
+      val num = if (comFriendsMap.contains(username)) comFriendsMap(username) else 0
+      resultList.add(new CommonFriendNum(username, num))
+    }
+
+    logInfo(s"searchCommonFriendNum耗時:${(System.currentTimeMillis() - beginTime) / 1000D} s")
+
+    resultList
+  }
+
+  def searchCommonFriendNum2(userNames: util.List[String], loginAccount: String): util.List[CommonFriendNum] = {
+
+    val beginTime = System.currentTimeMillis()
+    val sqlContext: SQLContext = sparkBaseFactory.getSQLContext
+
+    //得到userNames的朋友 (朋友，username)
+    val othersFriends: RDD[(String, String)] = sqlContext.sql(s"select username,loginAccount from ofRoster where username in ('${userNames.mkString("','")}') and loginAccount != '$loginAccount' and username != loginAccount")
+      .map(a => (a(0).toString, a(1).toString))
+
+    //得到loginAccount的朋友
+    val myFriends = sqlContext.sql(s"select loginAccount from ofRoster where username = '$loginAccount'").map(_ (0).toString).collect()
+
+    //该步骤会计算出共同好友的人数，但是如果共同好友人数为0，则username会被过滤掉
+    val comFriendsMap = othersFriends.aggregateByKey(new ArrayBuffer[String](), Props.get("spark.default.parallelism").toString.toInt)((acc: ArrayBuffer[String], value: String) => acc += value, (acc1, acc2) => acc1 ++ acc2)
+      .mapValues(a => a.distinct.intersect(myFriends).size).collectAsMap()
+
+    val resultList = new util.ArrayList[CommonFriendNum]()
+    userNames.foreach { username =>
+      val num = if (comFriendsMap.contains(username)) comFriendsMap(username) else 0
+      resultList.add(new CommonFriendNum(username, num))
     }
 
     logInfo(s"searchCommonFriendNum耗時:${(System.currentTimeMillis() - beginTime) / 1000D} s")
@@ -97,17 +122,25 @@ class BusinessCircleImpl extends IBusinessCircle with Logging {
     val beginTime = System.currentTimeMillis()
     val sqlContext: SQLContext = sparkBaseFactory.getSQLContext
 
-   sqlContext.sql(
-      s""" select username,loginAccount,userID from ofRoster  where
-         | loginAccount != '$loginAccount' and userID in ('${userIds.mkString("','")}') """.stripMargin).registerTempTable("table_a")
+    val tableNameA = s"table_${loginAccount}"
 
-    val las = sqlContext.sql(s"SELECT DISTINCT loginAccount as la FROM ofRoster WHERE username =  '$loginAccount' AND loginAccount !=  '$loginAccount'")
+    sqlContext.sql(
+      s""" select username,loginAccount,userID from ofRoster where
+         | loginAccount != '$loginAccount' and userID in ('${userIds.mkString("','")}') """.stripMargin).registerTempTable(tableNameA)
+
+    sqlContext.sql(s"cache table ${tableNameA}")
+
+    val las = sqlContext.sql(s"select distinct loginAccount from ofRoster where username =  '$loginAccount' and loginAccount !=  '$loginAccount'")
       .map(_ (0).toString).collect().mkString("','")
 
-    val oneLevelFriendsArray = sqlContext.sql(s"select DISTINCT userID FROM table_a where username = '$loginAccount'").map(a => (a(0).toString)).collect()
-    val twoLevelFriendsArray = sqlContext.sql(s"select DISTINCT userID FROM table_a where username != loginAccount and username in ('$las') and loginAccount NOT IN ('$las')").map(a => (a(0).toString)).collect()
+    val oneLevelFriendsArray = sqlContext.sql(s"select distinct userID from ${tableNameA} where username = '$loginAccount'")
+      .map(a => a(0).toString).collect()
 
-    sqlContext.dropTempTable("table_a")
+    val twoLevelFriendsArray =
+      sqlContext.sql(s"select distinct userID from ${tableNameA} where username != loginAccount and username in ('$las') and loginAccount not in ('$las')")
+        .map(a => a(0).toString).collect()
+
+    sqlContext.dropTempTable(tableNameA)
 
     val list = new util.ArrayList[PersonRelation]()
     val stranger = userIds.filter(a => !(oneLevelFriendsArray.contains(a) || twoLevelFriendsArray.contains(a)))
@@ -116,8 +149,7 @@ class BusinessCircleImpl extends IBusinessCircle with Logging {
     twoLevelFriendsArray.foreach(a => list.add(new PersonRelation(a, 2)))
     stranger.foreach(a => list.add(new PersonRelation(a, 3)))
 
-    val processTime = (System.currentTimeMillis() - beginTime) / 1000D
-    logInfo(s"searchPersonRelation耗時:$processTime s")
+    logInfo(s"searchPersonRelation耗時:${(System.currentTimeMillis() - beginTime) / 1000D} s")
     list
   }
 }
