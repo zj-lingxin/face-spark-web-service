@@ -5,6 +5,7 @@ import java.util
 import com.zjlp.face.spark.bean.CommonFriendNum
 import org.apache.spark.Logging
 import org.apache.spark.rdd.{CoGroupedRDD, RDD}
+import org.apache.spark.sql.SQLContext
 import scala.math.BigDecimal.RoundingMode.RoundingMode
 import scala.reflect.ClassTag
 

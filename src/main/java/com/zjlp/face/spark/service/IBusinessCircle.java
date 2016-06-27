@@ -41,9 +41,4 @@ public interface IBusinessCircle {
      */
     public List<PersonRelation> searchPersonRelation(List<String> userIds, String loginAccount);
 
-    /**
-     * 更新数据源 定时任务调取
-     * @return 返回执行状态
-     */
-    public Boolean updateDBSources();
 }

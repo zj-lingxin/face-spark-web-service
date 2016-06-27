@@ -1,13 +1,16 @@
 package com.zjlp.face.spark.base.factory
 
+import java.util.Date
+import java.util.concurrent.TimeUnit
 import javax.annotation.PostConstruct
 
+import akka.actor.ActorSystem
 import com.zjlp.face.spark.base.{Props, ISparkBaseFactory, SQLContextSingleton}
-import com.zjlp.face.spark.util.DateUtils
-import org.apache.spark.rdd.JdbcRDD
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.Logging
 import org.springframework.stereotype.Component
+
+import scala.concurrent.duration.FiniteDuration
 
 @Component
 class SparkBaseFactoryImpl extends ISparkBaseFactory with Logging {
@@ -23,20 +26,52 @@ class SparkBaseFactoryImpl extends ISparkBaseFactory with Logging {
    * 更新数据源
    */
   def updateSQLContext: Unit = {
-    logInfo("数据更新时间:" + DateUtils.getStrDate("yyyy-MM-dd hh:mm:ss"))
+    removeMyFriendsTempTables
+    updateData
+  }
+
+  private def updateData = {
+    dropOfRosterTable
+    cacheOfRosterTable
+  }
+
+  private def cacheOfRosterTable = {
+    val newOfRoster = s"ofRoster_${new Date().getTime}"
     val upperBound = getUpperBound
-    SQLContextSingleton.getInstance().read.format("jdbc").options(Map(
+    getSQLContext.read.format("jdbc").options(Map(
       "url" -> Props.get("jdbc_conn"),
-      "dbtable" -> "(select rosterID,username,loginAccount,userID as userID from view_ofroster where sub=3) ofRoster",
+      "dbtable" -> s"(select rosterID,username,loginAccount,userID as userID from view_ofroster where sub=3) tb",
       "driver" -> Props.get("jdbc_driver"),
       "partitionColumn" -> "rosterID",
       "lowerBound" -> "1",
       "upperBound" -> upperBound,
       "numPartitions" -> Props.get("spark.table.numPartitions")
-    )).load().registerTempTable("ofRoster")
-    logInfo(s"upperBound:${upperBound}")
-    logInfo("数据更新时间:" + DateUtils.getStrDate("yyyy-MM-dd hh:mm:ss"))
-    SQLContextSingleton.getInstance().sql("cache table ofRoster")
+    )).load().registerTempTable(newOfRoster)
+    getSQLContext.sql(s"cache table ${newOfRoster}")
+    logInfo(s"缓存 $newOfRoster 临时表")
+  }
+
+  /**
+   * 删除旧的ofRoster临时表,只保留最新的两个ofRoster表
+   */
+  private def dropOfRosterTable = {
+    val ofRosters = getSQLContext.tableNames()
+      .filter(_.startsWith("ofRoster_")).sorted.reverse
+    if (ofRosters.length >= 2) {
+      for(i <- 1 until ofRosters.length ) {
+        SQLContextSingleton.getInstance().dropTempTable(ofRosters(i))
+        logInfo(s"删除 ${ofRosters(i)} 临时表")
+      }
+    }
+  }
+
+  private def removeMyFriendsTempTables = {
+
+    getSQLContext.tableNames().filter(_.startsWith("my_friends_")).foreach {
+      tableName =>
+        getSQLContext.dropTempTable(tableName)
+        logInfo(s"删除临时表:$tableName")
+    }
   }
 
   private def getUpperBound = {
@@ -50,6 +85,8 @@ class SparkBaseFactoryImpl extends ISparkBaseFactory with Logging {
 
   @PostConstruct
   private def initSparkBase = {
-    updateSQLContext
+    import scala.concurrent.ExecutionContext.Implicits.global
+    ActorSystem("sparkDataScheduler").scheduler.schedule(FiniteDuration(0, TimeUnit.MINUTES), FiniteDuration(Props.get("app.update.interval.minutes").toInt, TimeUnit.MINUTES))(updateSQLContext)
   }
+
 }
