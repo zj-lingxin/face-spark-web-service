@@ -5,7 +5,7 @@ import java.util.concurrent.TimeUnit
 import javax.annotation.PostConstruct
 
 import akka.actor.ActorSystem
-import com.zjlp.face.spark.base.{Props, ISparkBaseFactory, SQLContextSingleton}
+import com.zjlp.face.spark.base.{Constants, Props, ISparkBaseFactory, SQLContextSingleton}
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.Logging
 import org.springframework.stereotype.Component
@@ -26,7 +26,7 @@ class SparkBaseFactoryImpl extends ISparkBaseFactory with Logging {
    * 更新数据源
    */
   def updateSQLContext: Unit = {
-    removeMyFriendsTempTables
+    removeTempTables
     updateData
   }
 
@@ -40,7 +40,7 @@ class SparkBaseFactoryImpl extends ISparkBaseFactory with Logging {
     val upperBound = getUpperBound
     getSQLContext.read.format("jdbc").options(Map(
       "url" -> Props.get("jdbc_conn"),
-      "dbtable" -> s"(select rosterID,username,loginAccount,userID as userID from view_ofroster where sub=3) tb",
+      "dbtable" -> s"(select rosterID,username,loginAccount,userID as userID from view_ofroster where sub=3 and userID is not null) tb",
       "driver" -> Props.get("jdbc_driver"),
       "partitionColumn" -> "rosterID",
       "lowerBound" -> "1",
@@ -58,16 +58,17 @@ class SparkBaseFactoryImpl extends ISparkBaseFactory with Logging {
     val ofRosters = getSQLContext.tableNames()
       .filter(_.startsWith("ofRoster_")).sorted.reverse
     if (ofRosters.length >= 2) {
-      for(i <- 1 until ofRosters.length ) {
-        SQLContextSingleton.getInstance().dropTempTable(ofRosters(i))
+      for (i <- 1 until ofRosters.length) {
+        getSQLContext.dropTempTable(ofRosters(i))
         logInfo(s"删除 ${ofRosters(i)} 临时表")
       }
     }
   }
 
-  private def removeMyFriendsTempTables = {
+  private def removeTempTables = {
 
-    getSQLContext.tableNames().filter(_.startsWith("my_friends_")).foreach {
+    getSQLContext.tableNames().filter(name => name.startsWith(Constants.relationsTable)
+      || name.startsWith(Constants.comFriendsTable)).foreach {
       tableName =>
         getSQLContext.dropTempTable(tableName)
         logInfo(s"删除临时表:$tableName")
@@ -84,7 +85,7 @@ class SparkBaseFactoryImpl extends ISparkBaseFactory with Logging {
   }
 
   @PostConstruct
-  private def initSparkBase = {
+  def initSparkBase = {
     import scala.concurrent.ExecutionContext.Implicits.global
     ActorSystem("sparkDataScheduler").scheduler.schedule(FiniteDuration(0, TimeUnit.MINUTES), FiniteDuration(Props.get("app.update.interval.minutes").toInt, TimeUnit.MINUTES))(updateSQLContext)
   }

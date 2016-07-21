@@ -34,13 +34,13 @@ object SparkContextSingleton extends Logging {
       "spark.sql.shuffle.partitions",
       "spark.executor.memory",
       "spark.executor.cores",
-      "spark.cores.max",
       "spark.speculation",
       "spark.driver.memory",
       "spark.driver.cores",
       "spark.default.parallelism",
       "spark.home",
-      "spark.jars"
+      "spark.jars",
+      "spark.scheduler.mode"
     ).foreach { prop =>
       conf.set(prop, Props.get(prop))
     }

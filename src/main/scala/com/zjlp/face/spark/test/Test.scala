@@ -3,35 +3,33 @@ package com.zjlp.face.spark.test
 import java.util
 
 import com.zjlp.face.spark.base.factory.SparkBaseFactoryImpl
-import com.zjlp.face.spark.service.impl.{BusinessCircleUnCacheImpl, BusinessCircleCacheImpl}
+import com.zjlp.face.spark.service.impl.{BusinessCircleCacheImpl3, BusinessCircleNewCacheImpl, BusinessCircleUnCacheImpl}
+import org.apache.spark.{SparkConf, SparkContext}
 
 
 object Test {
-  val bc = new BusinessCircleUnCacheImpl()
+  val bc = new BusinessCircleCacheImpl3()
 
   def testSearchCommonFriendNum() = {
 
-    val userNames = new java.util.ArrayList[String]()
+   val userNames = new java.util.ArrayList[String]()
+    userNames.add("13000000000")
     userNames.add("13000000001")
     userNames.add("13000000003")
-    userNames.add("13000000004")
-    userNames.add("13000000002")
-    userNames.add("13000000006")
-    userNames.add("1300000xx06")
+    userNames.add("12400004444")
+    userNames.add("12400007777")
+    userNames.add("13000000000")
+
     val loginAccount = "13000000005"
-    val list = bc.searchCommonFriendNum(userNames, loginAccount)
+    val list = bc.searchCommonFriendNum(loginAccount,userNames)
     println(list)
   }
 
   def testSearchPersonRelation() = {
     val userIds = new util.ArrayList[String]()
-    userIds.add("3184")
-    userIds.add("3186")
-    userIds.add("3322")
-    userIds.add("3183")
-    userIds.add("2807")
-    userIds.add("1080")
-    val list1 = bc.searchPersonRelation(userIds, "13000000005")
+
+    userIds.add("1085")
+    val list1 = bc.searchPersonRelation("13000000005", userIds)
 
     println(list1)
   }
@@ -40,6 +38,7 @@ object Test {
   def main(args: Array[String]) {
     val f = new SparkBaseFactoryImpl
     f.updateSQLContext
+    //f.updateSQLContext
 
     bc.setSparkBaseFactory(f)
     //bc.updateDBSources
@@ -52,11 +51,12 @@ object Test {
     println("################## 业务代码 开始计时###################")
     testSearchCommonFriendNum
 
-    testSearchPersonRelation
+    //[(13000000000,3), (13000000003,1)]
+    //testSearchPersonRelation
 
     println("################### 业务代码 总耗时：" + ((System.currentTimeMillis() - beginTime) / 1000D + "秒"))
-    while (true) {
+   /* while (true) {
 
-    }
+    }*/
   }
 }

@@ -18,5 +18,5 @@
 
 	<!--<dubbo:service interface="com.zjlp.face.spark.service.IUserContacts" ref="userContacts" version="0.0.1" retries="0" />-->
 
-	<dubbo:service interface="com.zjlp.face.spark.service.IBusinessCircle" ref="businessCircleUnCacheImpl" version="${dubbo.spark.version}" retries="0" timeout="${dubbo.spark.timeout}" />
+	<dubbo:service interface="com.zjlp.face.spark.service.IBusinessCircle" ref="businessCircleCacheImpl3" version="${dubbo.spark.version}" retries="0" timeout="${dubbo.spark.timeout}" />
 </beans>

@@ -3,7 +3,7 @@ package com.zjlp.face.spark.service.impl
 import java.util
 import javax.annotation.Resource
 
-import com.zjlp.face.spark.base.{SQLContextSingleton, ISparkBaseFactory, Props}
+import com.zjlp.face.spark.base.{Constants, SQLContextSingleton, ISparkBaseFactory, Props}
 import com.zjlp.face.spark.bean.{CommonFriendNum, PersonRelation}
 import com.zjlp.face.spark.service.IBusinessCircle
 import com.zjlp.face.spark.util.Utils
@@ -58,7 +58,7 @@ class BusinessCircleUnCacheImpl extends IBusinessCircle with Logging {
    * @param loginAccount 登入账号(username)
    * @return 返回结果集
    */
-  def searchCommonFriendNum(userNames: util.List[String], loginAccount: String): util.List[CommonFriendNum] = {
+  def searchCommonFriendNum(userNames: util.List[String],loginAccount: String): util.List[CommonFriendNum] = {
     val sqlContext = sparkBaseFactory.getSQLContext
     if (paramIsShow) logInfo(s"searchCommonFriendNum传入参数 loginAccount:$loginAccount; userNames:s$userNames")
     val beginTime = System.currentTimeMillis()
@@ -97,7 +97,7 @@ class BusinessCircleUnCacheImpl extends IBusinessCircle with Logging {
    * @param loginAccount 登入账号
    * @return
    */
-  override def searchPersonRelation(userIds: util.List[String], loginAccount: String): util.List[PersonRelation] = {
+  override def searchPersonRelation(userIds: util.List[String],loginAccount: String): util.List[PersonRelation] = {
     if (paramIsShow) logInfo(s"searchPersonRelation传入参数:loginAccount:$loginAccount; userIds:s$userIds")
     val sqlContext = sparkBaseFactory.getSQLContext
     val beginTime = System.currentTimeMillis()
@@ -106,7 +106,7 @@ class BusinessCircleUnCacheImpl extends IBusinessCircle with Logging {
     registerMyFriendsTempTableIfNotExist(ofRoster, loginAccount)
 
     val result = sqlContext.sql(
-      s"""select userID, friendType from my_friends_$loginAccount
+      s"""select userID, friendType from ${Constants.relationsTable}_$loginAccount
          | where userID in ('${userIds.mkString("','")}') """.stripMargin)
       .map(a => new PersonRelation(a(0).toString, a(1).toString.toInt)).collect()
 
@@ -119,7 +119,7 @@ class BusinessCircleUnCacheImpl extends IBusinessCircle with Logging {
 
   private def registerMyFriendsTempTableIfNotExist(ofRoster:String, loginAccount: String) = {
     val sqlContext: SQLContext = sparkBaseFactory.getSQLContext
-    if (!sqlContext.tableNames().contains(s"my_friends_$loginAccount")) {
+    if (!sqlContext.tableNames.contains(s"${Constants.relationsTable}_$loginAccount")) {
       val oneLevelFriends = sqlContext.sql(
           s""" select distinct userID FROM $ofRoster where username = '$loginAccount'
              | and loginAccount != '$loginAccount' and userID is not null""".stripMargin)
@@ -141,10 +141,10 @@ class BusinessCircleUnCacheImpl extends IBusinessCircle with Logging {
         .toDF("userID", "friendType")
 
       //再次确认是否存在该临时表
-      if(!sqlContext.tableNames().contains(s"my_friends_$loginAccount")){
-        tb.registerTempTable(s"my_friends_$loginAccount")
-        sqlContext.sql(s"cache table my_friends_$loginAccount")
-        logInfo(s"缓存临时表:my_friends_$loginAccount")
+      if(!sqlContext.tableNames.contains(s"${Constants.relationsTable}_$loginAccount")){
+        tb.registerTempTable(s"${Constants.relationsTable}_$loginAccount")
+        sqlContext.sql(s"cache table ${Constants.relationsTable}_$loginAccount")
+        logInfo(s"缓存临时表:${Constants.relationsTable}_$loginAccount")
       }
       oneLevelFriends.unpersist()
     }
