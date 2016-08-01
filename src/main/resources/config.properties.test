@@ -1,6 +1,7 @@
 jdbc_driver=com.mysql.jdbc.Driver
 
-jdbc_conn=jdbc:mysql://121.40.144.146:3306/wgj_test_s4?user=jzcs&password=qazwsx&useUnicode=true&characterEncoding=UTF8
+
+jdbc_conn=jdbc:mysql://192.168.1.251:3306/wgj_dev_s4?user=jzkf&password=jzwgjkf&useUnicode=true&characterEncoding=UTF8
 #industy_constants
 
 

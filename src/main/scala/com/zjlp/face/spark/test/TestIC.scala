@@ -16,6 +16,13 @@ object TestIC {
     Thread.sleep(20000)
 /*    val f = new SparkBaseFactoryImpl
     f.updateSQLContext*/
+    val result = test2
+
+   // iic.getTotalCount(userId,100001000,areaCode,industryCode)
+    println("finish")
+  }
+
+  def test1 = {
     val iic = new IndustryContactsImpl
     val userId = 1824L
     //val userId = 1718553L
@@ -24,7 +31,18 @@ object TestIC {
     val result = iic.getContacts(userId,100001000,areaCode,industryCode,1,5)
     println(result.getCount)
     println(result.getIndustryConnectionsList)
-   // iic.getTotalCount(userId,100001000,areaCode,industryCode)
-    println("finish")
+  }
+
+  def test2 = {
+    val iic = new IndustryContactsImpl
+    val userId = 143521L
+    //val userId = 1718553L
+    val areaCode = Array[Int]()
+    val industryCode =Array(100001000, 100002000, 100003000, 100004000, 100005000, 100006000, 100007000, 100008000, 100009000, 100010000, 100011000, 100012000, 100013000)
+    val prestigeAmount = 0
+    val result = iic.getContacts(userId,prestigeAmount,areaCode,industryCode,1,70)
+
+   // println(result.getCount)
+   // println(result.getIndustryConnectionsList)
   }
 }

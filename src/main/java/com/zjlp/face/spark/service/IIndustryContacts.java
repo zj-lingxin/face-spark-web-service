@@ -6,4 +6,5 @@ public interface IIndustryContacts {
 
     public IndustryConnectionsResult getContacts(Long userId, int myIndustryCode, int areaCode, int[] industryCodes, int pageNo, int pageSize);
 
+    public IndustryConnectionsResult getContacts(Long userId, int prestigeAmount, int[] areaCodes, int[] industryCodes, int pageNo, int pageSize);
 }
