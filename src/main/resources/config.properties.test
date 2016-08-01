@@ -1,6 +1,11 @@
 jdbc_driver=com.mysql.jdbc.Driver
 
 jdbc_conn=jdbc:mysql://121.40.144.146:3306/wgj_test_s4?user=jzcs&password=qazwsx&useUnicode=true&characterEncoding=UTF8
+#industy_constants
+
+
+
+
 
 #oldtest
 #jdbc_conn=jdbc:mysql://192.168.1.251:3306/wgj_dev_s4?user=jzkf&password=jzwgjkf&useUnicode=true&characterEncoding=UTF8
@@ -8,7 +13,7 @@ jdbc_conn=jdbc:mysql://121.40.144.146:3306/wgj_test_s4?user=jzcs&password=qazwsx
 #jdbc_conn=jdbc:mysql://192.168.1.232:3306/wgj_dev_s4?user=sparkquery&password=sparkquery&useUnicode=true&characterEncoding=UTF8
 
 #spark.master=spark://192.168.175.11:7077
-spark.master=local[8]
+spark.master=local[16]
 
 
 #jdbc_conn=jdbc:mysql://192.168.0.122:3306/wgj_s4?user=querywgj&password=de9Lb0f5&useUnicode=true&characterEncoding=UTF8
@@ -30,21 +35,19 @@ spark.jars=file:/data/work/luciuschina/face-spark-web-service/target/face-spark-
 #spark.driver.cores=2
 #spark.default.parallelism=48
 
-spark.sql.shuffle.partitions=3
-spark.table.numPartitions=3
-spark.default.parallelism=3
+spark.sql.shuffle.partitions=12
+spark.table.numPartitions=12
+spark.default.parallelism=12
 spark.scheduler.mode=FAIR
-spark.executor.memory=500m
+spark.executor.memory=1000m
 spark.executor.cores=1
 spark.cores.max=3
 spark.speculation=false
-spark.driver.memory=500m
+spark.driver.memory=1000m
 spark.driver.cores=1
 spark.table.upperBoundRate=1.4
 app.update.interval.minutes=720
 app.param.show=true
 
-
-
-
-
+roster_upper_bound=50000
+industry_contacts_upper_bound=50000

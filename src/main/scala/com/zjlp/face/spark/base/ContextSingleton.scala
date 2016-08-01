@@ -9,8 +9,10 @@ object SQLContextSingleton {
   private var instance: SQLContext = _
 
   def getInstance(sparkContext: SparkContext = SparkContextSingleton.getInstance): SQLContext = {
-    if (instance == null) {
-      instance = new SQLContext(sparkContext)
+    synchronized {
+      if (instance == null) {
+        instance = new SQLContext(sparkContext)
+      }
     }
     instance
   }
@@ -56,10 +58,13 @@ object SparkContextSingleton extends Logging {
   }
 
   def getInstance = {
-    if (instance == null) {
-      instance = new SparkContext(getSparkConf)
-      showSparkConf()
+    synchronized{
+      if (instance == null) {
+        instance = new SparkContext(getSparkConf)
+        showSparkConf()
+      }
     }
+
     instance
   }
 }

@@ -2,6 +2,7 @@ package com.zjlp.face.spark.util
 
 import java.util
 
+import com.zjlp.face.spark.base.SQLContextSingleton
 import com.zjlp.face.spark.bean.CommonFriendNum
 import org.apache.spark.Logging
 import org.apache.spark.rdd.{CoGroupedRDD, RDD}
@@ -120,6 +121,11 @@ object Utils extends Serializable {
     list
   }
 
+
+
+  def getLastTable(tablePrefix: String): String = {
+    SQLContextSingleton.getInstance().tableNames().filter(_.startsWith(tablePrefix)).sorted.reverse(0)
+  }
 }
 
 

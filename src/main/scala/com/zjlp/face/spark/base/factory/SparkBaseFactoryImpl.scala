@@ -37,14 +37,14 @@ class SparkBaseFactoryImpl extends ISparkBaseFactory with Logging {
 
   private def cacheOfRosterTable = {
     val newOfRoster = s"ofRoster_${new Date().getTime}"
-    val upperBound = getUpperBound
+
     getSQLContext.read.format("jdbc").options(Map(
       "url" -> Props.get("jdbc_conn"),
       "dbtable" -> s"(select rosterID,username,loginAccount,userID as userID from view_ofroster where sub=3 and userID is not null) tb",
       "driver" -> Props.get("jdbc_driver"),
       "partitionColumn" -> "rosterID",
       "lowerBound" -> "1",
-      "upperBound" -> upperBound,
+      "upperBound" -> Props.get("roster_upper_bound"),
       "numPartitions" -> Props.get("spark.table.numPartitions")
     )).load().registerTempTable(newOfRoster)
     getSQLContext.sql(s"cache table ${newOfRoster}")
@@ -81,7 +81,7 @@ class SparkBaseFactoryImpl extends ISparkBaseFactory with Logging {
       "dbtable" -> "(select count(1) as totalAmount from view_ofroster) table_num",
       "driver" -> Props.get("jdbc_driver")
     )).load().select("totalAmount").map(_ (0).toString).collect()(0)
-    (maxCount.toLong * Props.get("spark.table.upperBoundRate").toDouble).toLong.toString
+    maxCount.toLong.toString
   }
 
   @PostConstruct

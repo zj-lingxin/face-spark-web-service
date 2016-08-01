@@ -16,8 +16,8 @@ import scala.beans.BeanProperty
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ArrayBuffer
 
-@Service(value = "businessCircleCacheImpl3")
-class BusinessCircleCacheImpl3 extends IBusinessCircle with Logging {
+@Service(value = "BusinessCircleCacheImpl")
+class BusinessCircleCacheImpl extends IBusinessCircle with Logging {
 
 
   private val paramIsShow = Props.get("app.param.show").toBoolean
@@ -94,7 +94,6 @@ class BusinessCircleCacheImpl3 extends IBusinessCircle with Logging {
 
   def firstSearchComNum(userNames: util.List[String], loginAccount: String): util.ArrayList[CommonFriendNum] = {
     val sqlContext = sparkBaseFactory.getSQLContext
-    if (paramIsShow) logInfo(s"searchCommonFriendNum传入参数 loginAccount:$loginAccount; userNames:s$userNames")
     val beginTime = System.currentTimeMillis()
     val ofRoster = getNewOfRoster()
 
@@ -117,10 +116,6 @@ class BusinessCircleCacheImpl3 extends IBusinessCircle with Logging {
       val num = if (comFriendsMap.contains(username)) comFriendsMap(username) else 0
       resultList.add(new CommonFriendNum(username, num))
     }
-
-    logInfo(s"loginAccount:$loginAccount; ofRoster:$ofRoster; searchCommonFriendNum耗時:${(System.currentTimeMillis() - beginTime) / 1000D} s")
-    if (paramIsShow) logInfo(s"searchCommonFriendNum结果:loginAccount:$loginAccount; list:$resultList")
-
     resultList
   }
 

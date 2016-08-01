@@ -3,12 +3,12 @@ package com.zjlp.face.spark.test
 import java.util
 
 import com.zjlp.face.spark.base.factory.SparkBaseFactoryImpl
-import com.zjlp.face.spark.service.impl.{BusinessCircleCacheImpl3, BusinessCircleNewCacheImpl, BusinessCircleUnCacheImpl}
+import com.zjlp.face.spark.service.impl.BusinessCircleCacheImpl
 import org.apache.spark.{SparkConf, SparkContext}
 
 
 object Test {
-  val bc = new BusinessCircleCacheImpl3()
+  val bc = new BusinessCircleCacheImpl()
 
   def testSearchCommonFriendNum() = {
 
@@ -21,7 +21,7 @@ object Test {
     userNames.add("13000000000")
 
     val loginAccount = "13000000005"
-    val list = bc.searchCommonFriendNum(loginAccount,userNames)
+    val list = bc.searchCommonFriendNum(userNames,loginAccount)
     println(list)
   }
 
@@ -29,7 +29,7 @@ object Test {
     val userIds = new util.ArrayList[String]()
 
     userIds.add("1085")
-    val list1 = bc.searchPersonRelation("13000000005", userIds)
+    val list1 = bc.searchPersonRelation(userIds,"13000000005")
 
     println(list1)
   }
@@ -37,7 +37,7 @@ object Test {
 
   def main(args: Array[String]) {
     val f = new SparkBaseFactoryImpl
-    f.updateSQLContext
+    f.initSparkBase
     //f.updateSQLContext
 
     bc.setSparkBaseFactory(f)
