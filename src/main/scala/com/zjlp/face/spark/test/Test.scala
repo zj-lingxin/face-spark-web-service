@@ -2,7 +2,7 @@ package com.zjlp.face.spark.test
 
 import java.util
 
-import com.zjlp.face.spark.base.factory.SparkBaseFactoryImpl
+import com.zjlp.face.spark.base.factory.{IndustryContactsFactoryImpl, SparkBaseFactoryImpl}
 import com.zjlp.face.spark.service.impl.BusinessCircleCacheImpl
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -21,7 +21,7 @@ object Test {
     userNames.add("13000000000")
 
     val loginAccount = "13000000005"
-    val list = bc.searchCommonFriendNum(userNames,loginAccount)
+    val list = bc.searchCommonFriendNum(loginAccount,userNames)
     println(list)
   }
 
@@ -29,7 +29,7 @@ object Test {
     val userIds = new util.ArrayList[String]()
 
     userIds.add("1085")
-    val list1 = bc.searchPersonRelation(userIds,"13000000005")
+    val list1 = bc.searchPersonRelation("13000000005",userIds)
 
     println(list1)
   }
@@ -37,20 +37,15 @@ object Test {
 
   def main(args: Array[String]) {
     val f = new SparkBaseFactoryImpl
-    f.initSparkBase
-    //f.updateSQLContext
+    f.updateSQLContext
 
-    bc.setSparkBaseFactory(f)
-    //bc.updateDBSources
-
-
-    //bc.registerMyFriendsTempTableIfNotExist("13000000005")
+    Thread.sleep(20000)
 
     val beginTime = System.currentTimeMillis()
 
     println("################## 业务代码 开始计时###################")
     testSearchCommonFriendNum
-
+    testSearchPersonRelation()
     //[(13000000000,3), (13000000003,1)]
     //testSearchPersonRelation
 

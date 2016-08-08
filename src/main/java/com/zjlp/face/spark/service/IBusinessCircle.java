@@ -30,8 +30,9 @@ public interface IBusinessCircle {
      * @param loginAccount 登入账号
      * @return 返回结果集
      */
+    public List<CommonFriendNum> searchCommonFriendNum(String loginAccount,List<String> userNames);
+    @Deprecated
     public List<CommonFriendNum> searchCommonFriendNum(List<String> userNames,String loginAccount);
-    
     /**
      * 根据当前登录用户id和用户id列表返回人脉关系类型列表
      * 
@@ -39,6 +40,7 @@ public interface IBusinessCircle {
      * @param loginAccount 登入账号
      * @return
      */
+    public List<PersonRelation> searchPersonRelation(String loginAccount,List<String> userIds);
+    @Deprecated
     public List<PersonRelation> searchPersonRelation(List<String> userIds,String loginAccount);
-
 }

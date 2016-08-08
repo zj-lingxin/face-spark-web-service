@@ -28,14 +28,14 @@ object IndustryContactsImpl extends scala.Serializable {
     }
   }
 
-  implicit val keyOrdering2 = new Ordering[(Long, String, String, Int, String, Int, String, String, String, String, String,  Int, String)] {
-    override def compare(x: (Long, String, String, Int, String, Int, String, String, String, String, String, Int, String), y: (Long, String, String, Int, String, Int, String, String, String, String, String, Int, String)): Int = {
-      if(x._6 > y._6) {
+  implicit val keyOrdering2 = new Ordering[(Long, String, String, Int, String, Int, String, String, String, String, String,  String)] {
+    override def compare(x: (Long, String, String, Int, String, Int, String, String, String, String, String, String), y: (Long, String, String, Int, String, Int, String, String, String, String, String,  String)): Int = {
+      if (x._6 > y._6) {
         1
       } else if (x._6 < y._6) {
         -1
       } else {
-        if(x._13 < y._13) {
+        if (x._12 < y._12) {
           1
         } else {
           -1
@@ -49,13 +49,14 @@ object IndustryContactsImpl extends scala.Serializable {
 class IndustryContactsImpl extends IIndustryContacts with Logging with scala.Serializable {
   override def getContacts(userId: lang.Long, prestigeAmount: Int, areaCodes: Array[Int], industryCodes: Array[Int], pageNo: Int, pageSize: Int): IndustryConnectionsResult = {
     val beginTime = System.currentTimeMillis()
+    logDebug(s"userId:$userId,prestigeAmount:$prestigeAmount,areaCodes:${areaCodes.toList},industryCodes:${industryCodes.toList},pageNo:${pageNo},pageSize:${pageSize}")
     val industryContactsTable = Utils.getLastTable("IndustryContacts_")
 
     var query = s"select * from $industryContactsTable where userID != $userId "
-    if(industryCodes.length > 0) {
+    if (industryCodes.length > 0) {
       query += s" and industryCode in ('${industryCodes.mkString("','")}') "
     }
-    if(areaCodes.length > 0) {
+    if (areaCodes.length > 0) {
       query += s" and areaCode in ('${areaCodes.mkString("','")}') "
     }
     query += s" and prestigeAmount > $prestigeAmount "
@@ -65,12 +66,12 @@ class IndustryContactsImpl extends IIndustryContacts with Logging with scala.Ser
     if (usernames.length > 0) {
       query = query + s" and loginAccount not in ('${usernames.mkString("','")}') "
     }
-    logInfo(query)
+    logDebug(query)
     val allData = SQLContextSingleton.getInstance().sql(query)
       .map(a => (a(0).toString.toLong, a(1).toString, Option(a(2)).getOrElse("").toString, a(3).toString.toInt, Option(a(4)).getOrElse("").toString,
         a(5).toString.toInt, Option(a(6)).getOrElse("").toString, Option(a(7)).getOrElse("").toString, Option(a(8)).getOrElse("").toString,
         Option(a(9)).getOrElse("").toString, Option(a(10)).getOrElse("").toString,
-        a(11).toString.toInt, Option(a(13)).getOrElse("").toString)).persist()
+        Option(a(13)).getOrElse("").toString)).persist()
 
     val totalCount = allData.count
     val topData = allData.top(pageNo * pageSize)(IndustryContactsImpl.keyOrdering2)
@@ -97,13 +98,13 @@ class IndustryContactsImpl extends IIndustryContacts with Logging with scala.Ser
     val result = new IndustryConnectionsResult
     result.setCount(totalCount)
     result.setIndustryConnectionsList(list)
-    logInfo(s"getContacts 耗时：${System.currentTimeMillis() - beginTime}ms")
+    logInfo(s"getContacts 耗时：${System.currentTimeMillis() - beginTime}ms,userId:$userId,prestigeAmount:$prestigeAmount,pageNo:${pageNo},pageSize:${pageSize}")
     result
   }
 
-  override def getContacts(userId: lang.Long, myIndustryCode: Int, areaCode: Int, industryCodes: Array[Int], pageNo: Int, pageSize: Int): IndustryConnectionsResult = {
+  override def getContacts(userId: lang.Long, myIndustryCode: Integer, areaCode: Integer, industryCodes: Array[Int], pageNo: Int, pageSize: Int): IndustryConnectionsResult = {
     val beginTime = System.currentTimeMillis()
-
+    logDebug(s"userId:$userId,myIndustryCode:$myIndustryCode,areaCode:$areaCode,industryCodes:${industryCodes.toList},pageNo:${pageNo},pageSize:${pageSize}")
     val industryContactsTable = Utils.getLastTable("IndustryContacts_")
     //ofRoster是businessCircle中的临时表，因为是同时运行的，可以借用下
     val ofRosterTable = Utils.getLastTable("ofRoster_")
@@ -118,15 +119,15 @@ class IndustryContactsImpl extends IIndustryContacts with Logging with scala.Ser
       query = query + s" and loginAccount not in ('${usernames.mkString("','")}') "
     }
 
-    logInfo(query)
+    logDebug(query)
 
     //|userID|loginAccount|headImgUrl|certify|nickname|prestigeAmount| position| companyName|areaName|industryProvide|industryRequirement|industryCode|
     val allData = SQLContextSingleton.getInstance().sql(query)
       .map(a => (a(0).toString.toLong, a(1).toString, Option(a(2)).getOrElse("").toString, a(3).toString.toInt, Option(a(4)).getOrElse("").toString,
         a(5).toString.toInt, Option(a(6)).getOrElse("").toString, Option(a(7)).getOrElse("").toString, Option(a(8)).getOrElse("").toString,
         Option(a(9)).getOrElse("").toString, Option(a(10)).getOrElse("").toString,
-        a(11).toString.toInt, if (a(11).toString.toInt == myIndustryCode) 1 else 0,
-        if (Option(a(12)).getOrElse("-1").toString.toInt == areaCode) 1 else 0, Option(a(13)).getOrElse("").toString)).persist()
+        a(11).toString.toInt, if (myIndustryCode == null) 0 else if (a(11).toString.toInt == myIndustryCode) 1 else 0,
+        if (areaCode == null) 0 else if (Option(a(12)).getOrElse("-1").toString.toInt == areaCode) 1 else 0, Option(a(13)).getOrElse("").toString)).persist()
 
     val totalCount = allData.count
     val topData = allData.top(pageNo * pageSize)(IndustryContactsImpl.keyOrdering)
@@ -153,7 +154,7 @@ class IndustryContactsImpl extends IIndustryContacts with Logging with scala.Ser
     val result = new IndustryConnectionsResult
     result.setCount(totalCount)
     result.setIndustryConnectionsList(list)
-    logInfo(s"getContacts 耗时：${System.currentTimeMillis() - beginTime}ms")
+    logInfo(s"getContacts 耗时：${System.currentTimeMillis() - beginTime}ms,userId:$userId,myIndustryCode:$myIndustryCode,areaCode:$areaCode,pageNo:${pageNo},pageSize:${pageSize}")
     result
   }
 }

@@ -3,7 +3,7 @@ package com.zjlp.face.spark.service.impl
 import java.util
 import javax.annotation.Resource
 
-import com.zjlp.face.spark.base.{Constants, ISparkBaseFactory, Props}
+import com.zjlp.face.spark.base.{SQLContextSingleton, Constants, ISparkBaseFactory, Props}
 import com.zjlp.face.spark.bean.{CommonFriendNum, PersonRelation}
 import com.zjlp.face.spark.service.IBusinessCircle
 import com.zjlp.face.spark.util.Utils
@@ -18,11 +18,19 @@ import scala.collection.mutable.ArrayBuffer
 
 @Service(value = "BusinessCircleCacheImpl")
 class BusinessCircleCacheImpl extends IBusinessCircle with Logging {
+  @deprecated
+  override def searchCommonFriendNum(userNames: util.List[String], loginAccount: String): util.List[CommonFriendNum] = {
+    searchCommonFriendNum(loginAccount,userNames)
+  }
 
+  @deprecated
+  override def searchPersonRelation(userIds: util.List[String], loginAccount: String): util.List[PersonRelation] = {
+    searchPersonRelation(loginAccount, userIds)
+  }
 
   private val paramIsShow = Props.get("app.param.show").toBoolean
-  @Resource
-  @BeanProperty var sparkBaseFactory: ISparkBaseFactory = _
+/*  @Resource
+  @BeanProperty var sparkBaseFactory: ISparkBaseFactory = _*/
 
   /**
    * 一度好友查询
@@ -30,9 +38,8 @@ class BusinessCircleCacheImpl extends IBusinessCircle with Logging {
    * @return 返回结果集
    */
   def searchFriendFrame(loginAccount: String): DataFrame = {
-    val sqlContext = sparkBaseFactory.getSQLContext
     val ofRoster = getNewOfRoster()
-    sqlContext.sql(s"select distinct loginAccount from $ofRoster where username = '$loginAccount' and username <> loginAccount ")
+    SQLContextSingleton.getInstance().sql(s"select distinct loginAccount from $ofRoster where username = '$loginAccount' and username <> loginAccount ")
   }
 
   /**
@@ -41,16 +48,14 @@ class BusinessCircleCacheImpl extends IBusinessCircle with Logging {
    * @return 返回结果集
    */
   def searchTwoFriendFrame(loginAccount: String): DataFrame = {
-    val sqlContext = sparkBaseFactory.getSQLContext
     val ofRoster = getNewOfRoster()
     //我的所有的一度好友
     val myFriends = searchFriendFrame(loginAccount: String).map(_ (0).toString).collect()
-    sqlContext.sql(s"select distinct loginAccount from $ofRoster where username in ('${myFriends.mkString("','")}')")
+    SQLContextSingleton.getInstance().sql(s"select distinct loginAccount from $ofRoster where username in ('${myFriends.mkString("','")}')")
   }
 
   def getNewOfRoster(): String = {
-    val sqlContext = sparkBaseFactory.getSQLContext
-    sqlContext.tableNames().filter(_.startsWith("ofRoster_")).sorted.reverse(0)
+    SQLContextSingleton.getInstance().tableNames().filter(_.startsWith("ofRoster_")).sorted.reverse(0)
   }
 
   /**
@@ -60,8 +65,8 @@ class BusinessCircleCacheImpl extends IBusinessCircle with Logging {
    * @param loginAccount 登入账号(username)
    * @return 返回结果集
    */
-  def searchCommonFriendNum( userNames: util.List[String],loginAccount: String): util.List[CommonFriendNum] = {
-    val sqlContext = sparkBaseFactory.getSQLContext
+  def searchCommonFriendNum(loginAccount: String, userNames: util.List[String]): util.List[CommonFriendNum] = {
+    val sqlContext = SQLContextSingleton.getInstance()
     if (paramIsShow) logInfo(s"searchCommonFriendNum传入参数 loginAccount:$loginAccount; userNames:s$userNames")
 
     val ofRoster = getNewOfRoster()
@@ -80,7 +85,7 @@ class BusinessCircleCacheImpl extends IBusinessCircle with Logging {
       logInfo(s"loginAccount:$loginAccount; searchCommonFriendNum耗時:${(System.currentTimeMillis() - beginTime) / 1000D} s")
       if (paramIsShow) logInfo(s"searchCommonFriendNum结果:loginAccount:$loginAccount; list:$resultList")
     } else {
-      resultList = firstSearchComNum(userNames, loginAccount)
+      resultList = firstSearchComNum(loginAccount,userNames)
 
       val t = new Thread(new Runnable() {
         override def run(): Unit = {
@@ -92,8 +97,8 @@ class BusinessCircleCacheImpl extends IBusinessCircle with Logging {
     resultList
   }
 
-  def firstSearchComNum(userNames: util.List[String], loginAccount: String): util.ArrayList[CommonFriendNum] = {
-    val sqlContext = sparkBaseFactory.getSQLContext
+  def firstSearchComNum(loginAccount: String, userNames: util.List[String]): util.ArrayList[CommonFriendNum] = {
+    val sqlContext = SQLContextSingleton.getInstance()
     val beginTime = System.currentTimeMillis()
     val ofRoster = getNewOfRoster()
 
@@ -126,9 +131,9 @@ class BusinessCircleCacheImpl extends IBusinessCircle with Logging {
    * @param loginAccount 登入账号
    * @return
    */
-  override def searchPersonRelation(userIds: util.List[String], loginAccount: String): util.List[PersonRelation] = {
+  override def searchPersonRelation(loginAccount: String,userIds: util.List[String]): util.List[PersonRelation] = {
     if (paramIsShow) logInfo(s"searchPersonRelation传入参数:loginAccount:$loginAccount; userIds:s$userIds")
-    val sqlContext = sparkBaseFactory.getSQLContext
+    val sqlContext = SQLContextSingleton.getInstance()
     val ofRoster = getNewOfRoster()
     registerRelationsTableIfNotExist(ofRoster, loginAccount)
     val beginTime = System.currentTimeMillis()
@@ -144,7 +149,7 @@ class BusinessCircleCacheImpl extends IBusinessCircle with Logging {
   }
 
   def cacheComFriendsTable(ofRoster: String, loginAccount: String) = {
-    val sqlContext = sparkBaseFactory.getSQLContext
+    val sqlContext = SQLContextSingleton.getInstance()
     val tmpTableName = s"${Constants.comFriendsTable}_${loginAccount}"
     val beginTime = System.currentTimeMillis()
 
@@ -174,7 +179,7 @@ class BusinessCircleCacheImpl extends IBusinessCircle with Logging {
 
 
   private def getAllFriends(ofRoster: String, loginAccount: String, oneLevelFriends: Array[String]) = {
-    val sqlContext: SQLContext = sparkBaseFactory.getSQLContext
+    val sqlContext: SQLContext = SQLContextSingleton.getInstance()
     val las = sqlContext.sql(
       s""" select distinct loginAccount from $ofRoster where username =  '$loginAccount' and loginAccount !=  '$loginAccount'""".stripMargin)
       .map(_ (0).toString).collect().mkString("','")
@@ -187,7 +192,7 @@ class BusinessCircleCacheImpl extends IBusinessCircle with Logging {
   }
 
   private def registerRelationsTableIfNotExist(ofRoster: String, loginAccount: String) = {
-    val sqlContext: SQLContext = sparkBaseFactory.getSQLContext
+    val sqlContext: SQLContext = SQLContextSingleton.getInstance()
     val beginTime = System.currentTimeMillis()
     val tmpTableName = s"${Constants.relationsTable}_$loginAccount"
     if (!sqlContext.tableNames().contains(tmpTableName)) {

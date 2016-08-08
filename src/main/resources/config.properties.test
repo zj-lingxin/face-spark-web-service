@@ -14,7 +14,7 @@ jdbc_conn=jdbc:mysql://192.168.1.251:3306/wgj_dev_s4?user=jzkf&password=jzwgjkf&
 #jdbc_conn=jdbc:mysql://192.168.1.232:3306/wgj_dev_s4?user=sparkquery&password=sparkquery&useUnicode=true&characterEncoding=UTF8
 
 #spark.master=spark://192.168.175.11:7077
-spark.master=local[16]
+spark.master=local[1]
 
 
 #jdbc_conn=jdbc:mysql://192.168.0.122:3306/wgj_s4?user=querywgj&password=de9Lb0f5&useUnicode=true&characterEncoding=UTF8
@@ -36,17 +36,15 @@ spark.jars=file:/data/work/luciuschina/face-spark-web-service/target/face-spark-
 #spark.driver.cores=2
 #spark.default.parallelism=48
 
-spark.sql.shuffle.partitions=12
-spark.table.numPartitions=12
-spark.default.parallelism=12
+spark.sql.shuffle.partitions=3
+spark.table.numPartitions=3
+spark.default.parallelism=3
 spark.scheduler.mode=FAIR
-spark.executor.memory=1000m
+spark.executor.memory=500m
 spark.executor.cores=1
-spark.cores.max=3
 spark.speculation=false
-spark.driver.memory=1000m
+spark.driver.memory=500m
 spark.driver.cores=1
-spark.table.upperBoundRate=1.4
 app.update.interval.minutes=720
 app.param.show=true
 
